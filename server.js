@@ -23,14 +23,10 @@ app.use(helmet({
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
       ? [
-         'https://vercel-ecards-frontend.vercel.app', 
-         'https://vercel-ecards-frontend-qt98pfjnj-victor-jarms-projects.vercel.app',
-
-         'https://gatheredcards.com',
-         'https://www.gatheredcards.com',
-         'https://api.gatheredcards.com',
-
-         'https://render-ecards-backend.onrender.com',
+         'https://www.mailmergefromsheets.com',
+         'https://www.mailmergefromsheets.com',
+         'https://api.mailmergefromsheets.com',
+         'https://render-reachiomail-backend.onrender.com',
          'http://localhost:3000' // <-- Add this for local testing even in production
         ]
       : 'http://localhost:3000',
