@@ -10,7 +10,4 @@ const previewSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 86400 } // 24 hours in seconds
 });
 
-// Create TTL index for automatic cleanup after 24 hours
-previewSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
-
 module.exports = mongoose.model('Preview', previewSchema); 
