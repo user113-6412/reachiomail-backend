@@ -44,7 +44,7 @@ router.post('/preview', upload.single('csv'), async function fnGeneratePreview(r
       return res.status(400).json({ error: 'CSV file is empty' });
     }
 
-    console.log('csvData looks like so: ', csvData);
+ 
 
     const headers = Object.keys(csvData[0]);
     const sampleRow = csvData[0];
@@ -81,28 +81,12 @@ router.post('/preview', upload.single('csv'), async function fnGeneratePreview(r
     
     // Create proper HTML email structure
     const emailContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-            <div style="padding: 40px 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #333333; margin: 0; font-size: 28px; font-weight: 600;">ReachioMail</h1>
-                    <p style="color: #666666; margin: 10px 0 0 0; font-size: 16px;">AI-Powered Mail Merge</p>
-                </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">              
                 
-                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 30px;">
-                    ${emailBody.split('\n').map(paragraph => 
-                        paragraph.trim() ? `<p style="color: #333333; line-height: 1.6; margin: 0 0 16px 0; font-size: 16px;">${paragraph}</p>` : ''
-                    ).join('')}
-                </div>
-                
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-                    <p style="color: #666666; font-size: 14px; margin: 0;">
-                        This email was generated using <strong>ReachioMail</strong> - AI-powered mail merge without add-ons.
-                    </p>
-                    <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">
-                        <a href="https://reachiomail.com" style="color: #10b981; text-decoration: none;">Try ReachioMail Demo</a>
-                    </p>
-                </div>
-            </div>
+            ${emailBody.split('\n').map(paragraph => 
+                paragraph.trim() ? `<p style="color: #333333; line-height: 1.6; margin: 0 0 16px 0; font-size: 16px;">${paragraph}</p>` : ''
+            ).join('')}
+                           
         </div>
     `;
     
