@@ -1,0 +1,183 @@
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const csv = require('csv-parser');
+const OpenAI = require('openai');
+const { fnSendDemoEmail } = require('../services/brevoDemoService');
+const { savePreview, getPreviewById } = require('../services/previewCleanupService');
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Initialize OpenAI
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+
+
+// POST /api/mailmerge/preview - Generate AI email preview from CSV
+router.post('/preview', upload.single('csv'), async function fnGeneratePreview(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No CSV file uploaded' });
+    }
+
+    const csvBuffer = req.file.buffer;
+    const prompt = req.body.prompt || 'Write a friendly intro about {{Company}}';
+
+    console.log('prompt received from frontend: ', prompt);
+
+    // Parse CSV to get headers and first row
+    const csvData = await new Promise((resolve, reject) => {
+      const results = [];
+      const stream = require('stream');
+      const readableStream = new stream.Readable();
+      readableStream.push(csvBuffer);
+      readableStream.push(null);
+
+      readableStream
+        .pipe(csv())  // ← This is the magic! csv-parser library
+        .on('data', (data) => results.push(data))
+        .on('end', () => resolve(results))
+        .on('error', reject);
+    });
+
+    if (csvData.length === 0) {
+      return res.status(400).json({ error: 'CSV file is empty' });
+    }
+
+    console.log('csvData looks like so: ', csvData);
+
+    const headers = Object.keys(csvData[0]);
+    const sampleRow = csvData[0];
+
+    // Create a sample prompt with actual data
+    let samplePrompt = prompt;
+    headers.forEach(header => {
+      const placeholder = `{{${header}}}`;
+      const value = sampleRow[header] || '';
+      samplePrompt = samplePrompt.replace(new RegExp(placeholder, 'g'), value);
+    });
+
+    // Generate email content using OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert email writer. Create professional, friendly email content based on the user's prompt. Return ONLY the email body content as plain text without any HTML tags, markdown formatting, or code blocks."
+        },
+        {
+          role: "user",
+          content: `Write an email body with this prompt: "${samplePrompt}". Make it professional and engaging. Return ONLY the email body content as plain text.`
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    let emailBody = completion.choices[0].message.content.trim();
+    
+    // Clean up any markdown formatting that might have been added
+    emailBody = emailBody.replace(/^```html\s*/i, '').replace(/```\s*$/i, '');
+    
+    // Create proper HTML email structure
+    const emailContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <div style="padding: 40px 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #333333; margin: 0; font-size: 28px; font-weight: 600;">ReachioMail</h1>
+                    <p style="color: #666666; margin: 10px 0 0 0; font-size: 16px;">AI-Powered Mail Merge</p>
+                </div>
+                
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 30px;">
+                    ${emailBody.split('\n').map(paragraph => 
+                        paragraph.trim() ? `<p style="color: #333333; line-height: 1.6; margin: 0 0 16px 0; font-size: 16px;">${paragraph}</p>` : ''
+                    ).join('')}
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                    <p style="color: #666666; font-size: 14px; margin: 0;">
+                        This email was generated using <strong>ReachioMail</strong> - AI-powered mail merge without add-ons.
+                    </p>
+                    <p style="color: #999999; font-size: 12px; margin: 10px 0 0 0;">
+                        <a href="https://reachiomail.com" style="color: #10b981; text-decoration: none;">Try ReachioMail Demo</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Generate subject line
+    const subjectCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert email subject line writer. Create compelling, professional subject lines."
+        },
+        {
+          role: "user",
+          content: `Create a subject line for an email about: "${samplePrompt}". Keep it under 60 characters.`
+        }
+      ],
+      max_tokens: 50,
+      temperature: 0.7,
+    });
+
+    const subject = subjectCompletion.choices[0].message.content.trim();
+
+    // Store preview with unique ID
+    const previewId = Date.now().toString() + Math.random().toString(36).substr(2, 9); // genrate id 
+    const previewData = {
+      id: previewId,
+      subject: subject,
+      html: emailContent,
+      prompt: prompt,
+      headers: headers,
+      sampleRow: sampleRow,
+      createdAt: new Date()
+    };
+
+    // Save to MongoDB
+    await savePreview(previewData);
+
+    res.json(previewData);
+  } catch (error) {
+    console.error('Error generating preview:', error);
+    res.status(500).json({ error: 'Failed to generate preview' });
+  }
+});
+
+
+
+
+
+// POST /api/mailmerge/send - Send test email using generated preview
+router.post('/send', async function fnSendTestEmail(req, res) {
+  try {
+    const { previewId, email } = req.body;
+
+    if (!previewId || !email) {
+      return res.status(400).json({ error: 'Missing previewId or email' });
+    }
+
+    const preview = await getPreviewById(previewId);
+    if (!preview) {
+      return res.status(404).json({ error: 'Preview not found' });
+    }
+
+    // Send email using Brevo service
+    await fnSendDemoEmail(email, preview.subject, preview.html);
+
+    res.json({ success: true, message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email' });
+  }
+});
+
+
+
+
+
+
+module.exports = router; 
