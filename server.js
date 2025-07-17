@@ -23,9 +23,9 @@ app.use(helmet({
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
       ? [
-         'https://www.mailmergefromsheets.com',
-         'https://www.mailmergefromsheets.com',
-         'https://api.mailmergefromsheets.com',
+         'https://www.reachiomail.com',
+         'https://www.reachiomail.com',
+         'https://api.reachiomail.com',
          'https://render-reachiomail-backend.onrender.com',
          'http://localhost:3000' // <-- Add this for local testing even in production
         ]
