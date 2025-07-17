@@ -23,7 +23,7 @@ router.post('/preview', upload.single('csv'), async function fnGeneratePreview(r
     const csvBuffer = req.file.buffer;
     const prompt = req.body.prompt || 'Write a friendly intro about {{Company}}';
 
-    console.log('prompt received from frontend: ', prompt);
+
 
     // Parse CSV to get headers and first row
     const csvData = await new Promise((resolve, reject) => {
