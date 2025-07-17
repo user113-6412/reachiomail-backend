@@ -107,7 +107,7 @@ router.post('/preview', upload.single('csv'), async function fnGeneratePreview(r
       temperature: 0.7,
     });
 
-    const subject = subjectCompletion.choices[0].message.content.trim();
+    let subject = subjectCompletion.choices[0].message.content.trim();
 
     // remove the double quotes from the subject
     subject = subject.replace(/"/g, '');
