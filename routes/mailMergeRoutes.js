@@ -109,6 +109,9 @@ router.post('/preview', upload.single('csv'), async function fnGeneratePreview(r
 
     const subject = subjectCompletion.choices[0].message.content.trim();
 
+    // remove the double quotes from the subject
+    subject = subject.replace(/"/g, '');
+
     // Store preview with unique ID
     const previewId = Date.now().toString() + Math.random().toString(36).substr(2, 9); // genrate id 
     const previewData = {
