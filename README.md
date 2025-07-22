@@ -64,10 +64,9 @@ No add-ons. Upload a CSV, let AI craft the perfect intro, and hit send — strai
    NODE_ENV=development
    ```
 
-   **Frontend (.env.local)**
+   **Frontend (.env)**
    ```env
-   NEXT_PUBLIC_GA_ID=G-XXXX
-   NEXT_PUBLIC_LOGROCKET_ID=your-app/1.0.0
+   NEXT_PUBLIC_API_URL=http://localhost:10000/api
    ```
 
 4. **Start the development servers**
@@ -157,9 +156,8 @@ reachiomail/
 | `OPENAI_API_KEY` | OpenAI API key for email generation | Yes |
 | `BREVO_API_KEY` | Brevo API key for email delivery | Yes |
 | `BREVO_FROM_EMAIL` | Sender email address | Yes |
-| `NEXT_PUBLIC_GA_ID` | Google Analytics ID | No |
-| `NEXT_PUBLIC_LOGROCKET_ID` | LogRocket app ID | No |
-| `MONGODB_URI` | MongoDB connection string | No (uses in-memory storage) |
+| `NEXT_PUBLIC_API_URL` | e.g. http://localhost:10000/api for local dev | Yes |
+| `MONGODB_URI` | MongoDB connection string | Yes |
 | `PORT` | Backend server port | No (default: 10000) |
 
 ## Features in Detail
