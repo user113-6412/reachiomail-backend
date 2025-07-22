@@ -37,7 +37,6 @@ No add-ons. Upload a CSV, let AI craft the perfect intro, and hit send — strai
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd vj-next-mongo-reachiomail-node
    ```
 
 2. **Install dependencies**
